@@ -3,7 +3,6 @@ package com.eyalm.adns
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -43,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.eyalm.adns.ui.components.DnsSwitch
 import com.eyalm.adns.ui.theme.AdnsTheme
@@ -65,7 +65,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        val context = this@MainActivity
+        installSplashScreen()
         super.onCreate(savedInstanceState)
 
         if (checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) {
@@ -91,7 +92,12 @@ class MainActivity : ComponentActivity() {
                         onToggle = { viewModel.toggleDns() },
                         modifier = Modifier.padding(innerPadding),
                         server = server,
-                        onEditClick = { showDialog.value = true },
+                        onEditClick = {
+                            val intent = Intent(context, SettingsActivity::class.java).apply {
+                                putExtra("open_providers", true)
+                            }
+                            context.startActivity(intent)
+                        },
                         checkForUpdate = viewModel::checkForUpdate
                     )
                 }
@@ -235,7 +241,7 @@ fun Greeting(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(text = if (isEnabled) "Uptime" else "")
-                        Text(text = if (isEnabled) "$runningTime" else "")
+                        Text(text = if (isEnabled) runningTime else "")
                     }
                 }
             }
@@ -277,11 +283,11 @@ fun UpdateDialog(
             TextButton(
                 onClick = {
                     val url = "https://github.com/eyalm2000/adns/releases"
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                    try { 
+                    val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                    try {
                         context.startActivity(intent) 
                     } catch (e: android.content.ActivityNotFoundException) {
-                        android.util.Log.e("MainActivity", "No browser found to open release URL", e)
+                        Log.e("MainActivity", "No browser found to open release URL", e)
                     }
                     onClose()
                 }

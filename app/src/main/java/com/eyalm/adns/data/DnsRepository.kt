@@ -170,8 +170,11 @@ class DnsRepository(private val context: Context) {
         val edit = sharedPrefs.edit()
         edit.putString("selected_provider_id", providerId)
 
+        Log.d("DnsRepository", "Setting provider to $providerId")
+        Log.d("DnsRepository", "Setting url to $url")
+
         if (providerId == "custom") {
-            require(!url.isNullOrBlank() && url.matches(Regex("""^[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}$"""))) {
+            require(!url.isNullOrBlank() && android.util.Patterns.DOMAIN_NAME.matcher(url).matches()) {
                 "Invalid DNS hostname"
             }
             edit.putString("custom_url", url)

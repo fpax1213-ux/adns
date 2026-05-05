@@ -106,7 +106,7 @@ fun ProvidersScreen(
                         selected = provider.id == currentProvider.id,
                         onClick = {
                             if (!provider.isEnhanced) {
-                                viewModel.setProvider(provider, url = null)
+                                viewModel.setProvider(provider.id, url = null)
                             }
                         },
                         isEnhanced = provider.isEnhanced,
@@ -141,7 +141,7 @@ fun ProvidersScreen(
                                     customUrlText.value = it
                                     // isAdGuard.value = false
                                 },
-                                isError = false, // !isAdGuard.value && !isCustomValid,
+                                isError = !isCustomValid, // !isAdGuard.value && !isCustomValid,
                                 supportingText = {
                                     if (!isCustomValid && customUrlText.value.isNotEmpty()) {
                                         Text("Invalid hostname")
@@ -151,13 +151,15 @@ fun ProvidersScreen(
 
                         }
                     },
-                    selected = currentProvider.name == "Custom",
+                    selected = currentProvider.id == "custom",
                     onClick = {  },
                     modifier = Modifier
                 )
             }
             item { Button(
-                onClick = { viewModel.setDnsUrl(customUrlText.toString()) },
+                onClick = { viewModel.setProvider("custom", url = customUrlText.value)
+                            onBack()
+                          },
             ){ Text("Confirm") } }
         }
     }

@@ -2,12 +2,12 @@ package com.eyalm.adns
 
 import android.Manifest
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -60,6 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.data.DnsConstants
 import com.eyalm.adns.ui.components.ClickableCardSettings
@@ -95,19 +96,31 @@ class SettingsActivity : ComponentActivity() {
                 }
             }
 
+            val showProviders = remember { mutableStateOf(intent.getBooleanExtra("open_providers", false)) }
+
+
             AdnsTheme {
-                if (BuildConfig.DEBUG) {
-                    ProvidersScreen()
+                if (showProviders.value) {
+                    BackHandler { showProviders.value = false }
+
+                    ProvidersScreen(
+                        onBack = {
+                            showProviders.value = false
+                        }
+                    )
                 } else {
+
                     Greeting2(
-                        dnsUrl = dnsUrl ?: "",
-                        onDnsUrlChange = { viewModel.setDnsUrl(it) },
                         modifier = Modifier.fillMaxSize(),
                         onBack = { finish() },
                         onAddQuickTile = { viewModel.addQuickTile() },
-                        permissionLauncher = permissionLauncher
+                        permissionLauncher = permissionLauncher,
+                        onShowProviders = {
+                            showProviders.value = true
+                        }
                     )
                 }
+
             }
         }
     }
@@ -116,29 +129,13 @@ class SettingsActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun Greeting2(
-    dnsUrl: String,
-    onDnsUrlChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onAddQuickTile: () -> Unit = {},
-    permissionLauncher: ActivityResultLauncher<String>? = null
+    permissionLauncher: ActivityResultLauncher<String>? = null,
+    onShowProviders: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val openDnsDialog = remember { mutableStateOf(false) }
-
-    when {
-        openDnsDialog.value -> {
-            DnsDialog(
-                onDismissRequest = { openDnsDialog.value = false },
-                onConfirmation = {
-                    onDnsUrlChange(it)
-                    openDnsDialog.value = false
-                },
-                currentUrl = dnsUrl)
-        }
-    }
-
-
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -173,6 +170,14 @@ fun Greeting2(
             ) }
             item {
                 ClickableCardSettings(
+                    onClick = onShowProviders,
+                    title = "Change Provider",
+                    description = "Change the provider to use",
+                    icon = Icons.Filled.BroadcastOnPersonal
+                )
+            }
+            item {
+                ClickableCardSettings(
                     onClick = {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                             permissionLauncher?.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -191,14 +196,7 @@ fun Greeting2(
                     icon = Icons.Filled.SettingsSuggest
                 )
             }
-            item {
-                ClickableCardSettings(
-                    onClick = { openDnsDialog.value = true },
-                    title = "Change the DNS server (advanced)",
-                    description = "Change the DNS server to use",
-                    icon = Icons.Filled.BroadcastOnPersonal
-                )
-            }
+
             item {
                 Card(
                     shape = RoundedCornerShape(16.dp),
@@ -206,11 +204,11 @@ fun Greeting2(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
                         val url = "https://github.com/eyalm2000/adns"
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        try { 
+                        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                        try {
                             context.startActivity(intent) 
                         } catch (e: android.content.ActivityNotFoundException) {
-                            android.util.Log.e("Settings", "No browser found to open GitHub URL", e)
+                            Log.e("Settings", "No browser found to open GitHub URL", e)
                         }
                     }
                 ) {
@@ -387,8 +385,6 @@ fun DnsDialogPreview() {
 fun GreetingPreview2() {
     AdnsTheme {
         Greeting2(
-            dnsUrl = DnsConstants.ADGUARD_DNS,
-            onDnsUrlChange = {},
             permissionLauncher = null
         )
     }
