@@ -46,8 +46,8 @@ class DnsRepository(private val context: Context) {
             val host = Settings.Global.getString(resolver, DnsConstants.SPECIFIER_KEY)
 
             mode == DnsConstants.MODE_HOSTNAME && host == getDnsUrl()
-        } catch (e: Exception) {
-            Log.e("DnsRepository", "Error checking DNS settings")
+        } catch (e: SecurityException) {
+            Log.e("DnsRepository", "Permission denied checking DNS settings", e)
             return false
         }
     }
@@ -118,6 +118,9 @@ class DnsRepository(private val context: Context) {
     }
 
     fun setCustomUrl(url: String) {
+        require(url.isNotBlank() && url.matches(Regex("""^[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}$"""))) {
+            "Invalid DNS hostname"
+        }
         val isActive = isAdBlockingActive()
         sharedPrefs.edit().putString("custom_url", url).apply()
         Log.d("adnsp", "$isActive")

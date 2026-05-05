@@ -278,7 +278,11 @@ fun UpdateDialog(
                 onClick = {
                     val url = "https://github.com/eyalm2000/adns/releases"
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                    try { context.startActivity(intent) } catch (e: Exception) {}
+                    try { 
+                        context.startActivity(intent) 
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        android.util.Log.e("MainActivity", "No browser found to open release URL", e)
+                    }
                     onClose()
                 }
             ) {

@@ -202,7 +202,11 @@ fun Greeting2(
                     onClick = {
                         val url = "https://github.com/eyalm2000/adns"
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        try { context.startActivity(intent) } catch (_: Exception) {}
+                        try { 
+                            context.startActivity(intent) 
+                        } catch (e: android.content.ActivityNotFoundException) {
+                            android.util.Log.e("Settings", "No browser found to open GitHub URL", e)
+                        }
                     }
                 ) {
                     Column(

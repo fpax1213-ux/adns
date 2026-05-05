@@ -110,7 +110,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         withContext(Dispatchers.Main) { onResult(latestVersion) }
                     }
                 }
-            } catch (e: Exception) {
+            } catch (e: java.io.IOException) {
+                Log.e("MainViewModel", "Network error checking update", e)
+                withContext(Dispatchers.Main) { onResult(null) }
+            } catch (e: org.json.JSONException) {
+                Log.e("MainViewModel", "JSON parse error checking update", e)
                 withContext(Dispatchers.Main) { onResult(null) }
             }
         }

@@ -3,7 +3,9 @@ package com.eyalm.adns.services
 import android.content.BroadcastReceiver
 import android.util.Log
 import com.eyalm.adns.data.DnsRepository
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class ToggleReceiver : BroadcastReceiver() {
@@ -17,9 +19,12 @@ class ToggleReceiver : BroadcastReceiver() {
             val repository = DnsRepository(context!!)
             val newState = !repository.isAdBlockingActive()
 
-            GlobalScope.launch {
-                repository.setAdBlockingState(newState).join()
-                pendingResult.finish()
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                try {
+                    repository.setAdBlockingState(newState).join()
+                } finally {
+                    pendingResult.finish()
+                }
             }
         }
     }
