@@ -25,7 +25,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -37,13 +36,15 @@ import com.eyalm.adns.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Preview
+
 fun ProvidersScreen(
     onBack: () -> Unit = { },
+    onEnhancedModeClick: (providerId: String) -> Unit = { },
 ) {
 
     val viewModel: SettingsViewModel = viewModel()
     val currentProvider by viewModel.selectedProvider.collectAsState()
+
 
     val customUrlText = remember {
         mutableStateOf(
@@ -106,7 +107,11 @@ fun ProvidersScreen(
                         selected = provider.id == currentProvider.id,
                         onClick = {
                             if (!provider.isEnhanced) {
-                                viewModel.setProvider(provider.id, url = null)
+                                viewModel.setProvider(provider.id)
+                            } else {
+                                if (provider.id != currentProvider.id) {
+                                    onEnhancedModeClick(provider.id)
+                                }
                             }
                         },
                         isEnhanced = provider.isEnhanced,

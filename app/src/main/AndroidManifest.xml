@@ -6,7 +6,6 @@
     <uses-permission
         android:name="android.permission.WRITE_SECURE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
@@ -19,6 +18,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Adns">
+        <activity
+            android:name=".ProviderLoginActivity"
+            android:exported="false"
+            android:label="@string/title_activity_provider_login"
+            android:theme="@style/Theme.Adns" />
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
@@ -49,7 +53,6 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-
         <receiver android:name=".services.ToggleReceiver" />
 
         <service

@@ -3,6 +3,7 @@ package com.eyalm.adns.data
 import android.content.Context
 import android.util.Log
 import android.util.Log.e
+import com.eyalm.adns.data.models.DnsProviders
 import com.eyalm.adns.data.network.ApiClient
 import com.eyalm.adns.data.network.NextDnsLoginRequest
 import com.eyalm.adns.data.network.NextDnsProfile
@@ -10,6 +11,7 @@ import com.eyalm.adns.data.network.NextDnsProfile
 class ApiRepository(context: Context) {
 
     private val sharedPrefs = context.getSharedPreferences("adns_settings", Context.MODE_PRIVATE)
+    val repository = DnsRepository(context)
 
     suspend fun NextDnsLogin(email: String, password: String): Boolean {
         return try {
@@ -31,6 +33,8 @@ class ApiRepository(context: Context) {
                     .apply()
 
                 Log.d("ApiRepository", "Login Success! Cookies saved: $fullCookieString")
+
+                DnsProviders.NEXTDNS.isLoggedIn = true
 
                 true
             } else {
@@ -64,6 +68,9 @@ class ApiRepository(context: Context) {
         }
     }
 
-
+    fun setNextDnsProfile(profile: NextDnsProfile) {
+        DnsProviders.NEXTDNS.hostname = profile.id + ".dns.nextdns.io"
+        repository.setProvider(DnsProviders.NEXTDNS.id)
+    }
 
 }

@@ -162,16 +162,14 @@ class DnsRepository(private val context: Context) {
 
     }
 
-    fun setProvider(providerId: String, url: String?) {
+    fun setProvider(providerId: String, url: String? = null) {
 
         val isActive = isAdBlockingActive()
-
 
         val edit = sharedPrefs.edit()
         edit.putString("selected_provider_id", providerId)
 
         Log.d("DnsRepository", "Setting provider to $providerId")
-        Log.d("DnsRepository", "Setting url to $url")
 
         if (providerId == "custom") {
             require(!url.isNullOrBlank() && android.util.Patterns.DOMAIN_NAME.matcher(url).matches()) {
@@ -186,7 +184,7 @@ class DnsRepository(private val context: Context) {
             val newUrl = getDnsUrl()
             if (newUrl != null) {
                 setAdBlockingState(true)
-            }
+            } else throw IllegalStateException("No DNS URL configured")
         }
 
 
@@ -199,9 +197,7 @@ class DnsRepository(private val context: Context) {
         return when (selectedProvider) {
             is DnsProvider.Standard -> selectedProvider.hostname
             is DnsProvider.Custom -> selectedProvider.userUrl
-            is DnsProvider.Enhanced -> {
-                sharedPrefs.getString("api_hostname_${selectedProvider.id}", null)
-            }
+            is DnsProvider.Enhanced -> selectedProvider.hostname
         }
 
     }

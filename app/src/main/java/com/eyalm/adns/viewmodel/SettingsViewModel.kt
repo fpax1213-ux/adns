@@ -64,7 +64,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _selectedProvider = MutableStateFlow(repository.getSelectedProvider())
     val selectedProvider = _selectedProvider.asStateFlow()
 
-    fun setProvider(providerId: String, url: String?) {
+    fun setProvider(providerId: String, url: String? = null) {
         repository.setProvider(providerId, url)
         _selectedProvider.value = repository.getSelectedProvider()
     }

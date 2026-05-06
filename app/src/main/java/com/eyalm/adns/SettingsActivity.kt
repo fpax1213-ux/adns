@@ -106,6 +106,12 @@ class SettingsActivity : ComponentActivity() {
                     ProvidersScreen(
                         onBack = {
                             showProviders.value = false
+                        },
+                        onEnhancedModeClick = { providerId ->
+                            val intent = Intent(this@SettingsActivity, ProviderLoginActivity::class.java).apply {
+                                putExtra("provider", providerId)
+                            }
+                            this@SettingsActivity.startActivity(intent)
                         }
                     )
                 } else {
