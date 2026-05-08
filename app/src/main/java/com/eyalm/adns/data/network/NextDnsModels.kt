@@ -19,6 +19,16 @@ data class NextDnsProfile(
     @SerializedName("name") val name: String
 )
 
+data class NextDnsAnalytics(
+    @SerializedName("data") val data: List<NextDnsAnalyticsData>,
+    @SerializedName("meta") val meta: Any
+)
+
+data class NextDnsAnalyticsData(
+    @SerializedName("status") val status: String,
+    @SerializedName("queries") val queries: String,
+)
+
 // Request for creating a new profile
 data class NextDnsCreateProfileRequest(
     @SerializedName("name") val name: String,

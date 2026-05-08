@@ -6,6 +6,7 @@ import android.util.Log.e
 import com.eyalm.adns.data.models.DnsProvider
 import com.eyalm.adns.data.models.DnsProviders
 import com.eyalm.adns.data.network.ApiClient
+import com.eyalm.adns.data.network.NextDnsAnalytics
 import com.eyalm.adns.data.network.NextDnsCreateProfileRequest
 import com.eyalm.adns.data.network.NextDnsLoginRequest
 import com.eyalm.adns.data.network.NextDnsProfile
@@ -58,6 +59,33 @@ class ApiRepository(context: Context) {
 
     }
 
+    fun getCurrentNextDnsProfileId(): String? {
+        val url = sharedPrefs.getString("enhanced_url", null);
+        if (url != null) {
+            return url.substringBefore(".dns.nextdns.io")
+        }
+        return null
+    }
+
+    suspend fun getNextDnsStats(): NextDnsAnalytics? {
+        val profileId = getCurrentNextDnsProfileId()
+        val cookie = getNextDnsCookie()
+
+        if (profileId == null || cookie == null) {
+
+            Log.e("ApiRepository", "No profile or cookie available for NextDNS stats")
+            e("ApiRepository", "${if (profileId == null) "Profile ID is null. " else ""}${if (cookie == null) "Cookie is null." else ""}")
+            return null
+        }
+
+        return try {
+            ApiClient.nextDnsApi.getAnalytics(cookie, profileId, "-30d")
+        } catch (e: Exception) {
+            Log.e("ApiRepository", "Error fetching analytics", e)
+            null
+        }
+    }
+
     fun isLoggedIn(provider: DnsProvider): Boolean {
         return provider is DnsProvider.Enhanced && getNextDnsCookie() != null
     }
@@ -81,8 +109,7 @@ class ApiRepository(context: Context) {
     }
 
     fun setNextDnsProfile(profile: NextDnsProfile) {
-        val hostname = profile.id + ".dns.nextdns.io"
-        repository.setProvider(DnsProviders.NEXTDNS.id, hostname)
+        repository.setProvider(DnsProviders.NEXTDNS.id, profile.id + ".dns.nextdns.io")
     }
 
     suspend fun createNextDnsProfile(name: String) {

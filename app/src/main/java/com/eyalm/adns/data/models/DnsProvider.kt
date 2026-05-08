@@ -1,7 +1,5 @@
 package com.eyalm.adns.data.models
 
-import com.eyalm.adns.data.network.NextDnsProfile
-
 sealed class DnsProvider {
 
     abstract val id: String
@@ -22,7 +20,6 @@ sealed class DnsProvider {
         override val id: String,
         override val name: String,
         override val description: String,
-        var currentProfile: NextDnsProfile?
     ) : DnsProvider() {
         override val isEnhanced = true
     }

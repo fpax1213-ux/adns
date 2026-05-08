@@ -38,7 +38,6 @@ class DnsRepository(private val context: Context) {
     private val sharedPrefs = context.getSharedPreferences("adns_settings", Context.MODE_PRIVATE)
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-
     init {
         createNotificationChannel()
     }

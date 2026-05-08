@@ -5,6 +5,8 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface NextDnsApi {
 
@@ -23,5 +25,12 @@ interface NextDnsApi {
         @Header("Cookie") cookie: String,
         @Body request: NextDnsCreateProfileRequest
     ): Response<NextDnsProfile>
+
+    @GET("profiles/{profileId}/analytics/status")
+    suspend fun getAnalytics(
+        @Header("Cookie") cookie: String,
+        @Path("profileId") profileId: String,
+        @Query("from") period: String
+    ): NextDnsAnalytics
 
 }
