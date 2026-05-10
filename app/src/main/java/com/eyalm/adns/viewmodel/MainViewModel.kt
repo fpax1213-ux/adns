@@ -3,11 +3,16 @@ package com.eyalm.adns.viewmodel
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.eyalm.adns.BuildConfig
+import com.eyalm.adns.data.ApiRepository
 import com.eyalm.adns.data.DnsRepository
+import com.eyalm.adns.data.models.DnsProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,7 +30,11 @@ import java.util.Locale
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = DnsRepository(application)
+    private val apiRepository = ApiRepository(application)
     private val sharedPrefs = application.getSharedPreferences("adns_settings", Context.MODE_PRIVATE)
+
+    var dnsStats by mutableStateOf<Any?>(null)
+        private set
 
     val dnsUrlFlow: StateFlow<String> = repository.getDnsUrlFlow()
         .stateIn(
@@ -70,6 +79,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setDnsUrl(url: String) {
         repository.setCustomUrl(url)
+    }
+
+    suspend fun getStats() {
+
+        val provider = repository.getSelectedProvider()
+
+        if (provider !is DnsProvider.Enhanced) {
+            throw IllegalStateException("User must be logged in to get stats")
+        }
+
+        val stats = apiRepository.getNextDnsStats()
+
+        dnsStats = stats
+
     }
 
     fun checkForUpdate(onResult: (String?) -> Unit) {
