@@ -13,6 +13,7 @@ import com.eyalm.adns.BuildConfig
 import com.eyalm.adns.data.ApiRepository
 import com.eyalm.adns.data.DnsRepository
 import com.eyalm.adns.data.models.DnsProvider
+import com.eyalm.adns.data.network.NextDnsAnalytics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,7 +34,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val apiRepository = ApiRepository(application)
     private val sharedPrefs = application.getSharedPreferences("adns_settings", Context.MODE_PRIVATE)
 
-    var dnsStats by mutableStateOf<Any?>(null)
+    var dnsStats by mutableStateOf<NextDnsAnalytics?>(null)
         private set
 
     val dnsUrlFlow: StateFlow<String> = repository.getDnsUrlFlow()
@@ -81,7 +82,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.setCustomUrl(url)
     }
 
-    suspend fun getStats() {
+    suspend fun getStats(): DnsProvider {
 
         val provider = repository.getSelectedProvider()
 
@@ -92,6 +93,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val stats = apiRepository.getNextDnsStats()
 
         dnsStats = stats
+
+        return provider
 
     }
 
