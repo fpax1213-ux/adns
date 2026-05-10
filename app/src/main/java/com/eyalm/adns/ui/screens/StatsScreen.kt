@@ -12,8 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,6 +46,7 @@ fun StatsScreen(
     val stats = viewModel.dnsStats
     val error = remember { mutableStateOf<String?>(null) }
     val provider = remember { mutableStateOf<DnsProvider?>(null) }
+    val isSupported = remember { mutableStateOf<Boolean>(true) }
 
     LaunchedEffect(Unit) { // TODO: Move this to outside of the screen
         if (viewModel.dnsStats == null) {
@@ -49,6 +54,9 @@ fun StatsScreen(
                 provider.value = viewModel.getStats()
             } catch (e: Exception) {
                 error.value = e.message ?: "Failed to load stats"
+                if (e.message?.contains("must be logged") == true) {
+                    isSupported.value = false
+                }
             }
         }
     }
@@ -67,7 +75,8 @@ fun StatsScreenContent(
     stats: NextDnsAnalytics?,
     error: String?,
     paddingValues: PaddingValues,
-    provider: DnsProvider?
+    provider: DnsProvider?,
+    isSupported: Boolean = true
 ) {
     Column(
         modifier = Modifier
@@ -80,8 +89,14 @@ fun StatsScreenContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
-        if (error != null) {
-            Text("Error: $error")
+        if (error != null && isSupported) {
+            Spacer(modifier = Modifier.weight(1f))
+            UnsupportedScreen()
+            Spacer(modifier = Modifier.weight(1f))
+        } else if (!isSupported) { // TODO UGH WHATEVER
+            Spacer(modifier = Modifier.weight(1f))
+            UnsupportedScreen()
+            Spacer(modifier = Modifier.weight(1f))
         } else if (stats == null) {
             Spacer(modifier = Modifier.weight(1f))
             LoadingIndicator(modifier = Modifier.size(100.dp).align(Alignment.CenterHorizontally))
@@ -90,6 +105,34 @@ fun StatsScreenContent(
             StatsCards(stats, provider)
         }
 
+    }
+}
+
+@Composable
+fun UnsupportedScreen() {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Warning,
+            contentDescription = "Unsupported",
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(48.dp)
+        )
+        Text(
+            text = "To use Stats, switch to an enhanced provider.",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 16.dp)
+        )
+        Text(
+            text = "Enhanced providers are using your credentials, which enables direct access to your provider's settings and stats. ",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally)
+        )
     }
 }
 
