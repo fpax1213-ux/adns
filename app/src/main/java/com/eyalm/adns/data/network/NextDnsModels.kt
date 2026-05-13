@@ -55,3 +55,28 @@ data class NextDnsCreateProfileRequest(
     }
 }
 
+data class NextDnsBlocklistResponse(
+    @SerializedName("data") val data: List<NextDnsBlocklistData>
+)
+
+data class NextDnsBlocklistData(
+    @SerializedName("id") val id: String,
+    @SerializedName("name") val name: String?,
+    @SerializedName("website") val website: String?,
+    @SerializedName("description") val description: String?,
+    @SerializedName("entries") val entries: Int,
+    @SerializedName("updatedOn") val updatedOn: String
+)
+
+data class NextDnsPrivacyResponse(
+    @SerializedName("data") val data: NextDnsPrivacyData
+)
+
+data class NextDnsPrivacyData(
+    @SerializedName("allowAffiliate") val allowAffiliate: Boolean,
+    @SerializedName("blocklists") val blocklists: List<NextDnsBlocklistData>,
+    @SerializedName("disguisedTrackers") val disguisedTrackers: Boolean,
+    @SerializedName("natives") val natives: List<Any>?
+)
+
+

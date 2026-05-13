@@ -33,4 +33,15 @@ interface NextDnsApi {
         @Query("from") period: String
     ): NextDnsAnalytics
 
+    @GET("privacy/blocklists")
+    suspend fun getBlocklists(
+        @Header("Cookie") cookie: String
+    ): NextDnsBlocklistResponse
+
+    @GET("profiles/{profileId}/privacy")
+    suspend fun getPrivacy(
+        @Header("Cookie") cookie: String,
+        @Path("profileId") profileId: String
+    ): NextDnsPrivacyResponse
+
 }

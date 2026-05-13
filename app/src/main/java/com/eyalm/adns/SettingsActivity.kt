@@ -1,11 +1,13 @@
 package com.eyalm.adns
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.util.Patterns
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -27,6 +29,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.BroadcastOnPersonal
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.SettingsSuggest
@@ -46,6 +49,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,10 +67,13 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.data.DnsConstants
+import com.eyalm.adns.data.models.DnsProvider
 import com.eyalm.adns.ui.components.ClickableCardSettings
+import com.eyalm.adns.ui.screens.AccountSettingsScreen
 import com.eyalm.adns.ui.screens.ProvidersScreen
 import com.eyalm.adns.ui.theme.AdnsTheme
 import com.eyalm.adns.viewmodel.SettingsViewModel
+import com.eyalm.adns.viewmodel.SettingsViewModel.Page
 
 class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,6 +82,7 @@ class SettingsActivity : ComponentActivity() {
         setContent {
             val viewModel: SettingsViewModel = viewModel()
             val dnsUrl by viewModel.dnsUrl.collectAsState()
+            val page by viewModel.page.collectAsState()
 
             val permissionLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestPermission()
@@ -96,37 +104,43 @@ class SettingsActivity : ComponentActivity() {
                 }
             }
 
-            val showProviders = remember { mutableStateOf(intent.getBooleanExtra("open_providers", false)) }
+            // val showProviders = remember { mutableStateOf(intent.getBooleanExtra("open_providers", false)) }
 
 
             AdnsTheme {
-                if (showProviders.value) {
-                    BackHandler { showProviders.value = false }
+                when (page) {
+                    Page.PROVIDERS -> {
+                        BackHandler { viewModel.setPage(Page.MAIN) }
 
-                    ProvidersScreen(
-                        onBack = {
-                            showProviders.value = false
-                        },
-                        onEnhancedModeClick = { providerId ->
-                            val intent = Intent(this@SettingsActivity, ProviderLoginActivity::class.java).apply {
-                                putExtra("provider", providerId)
+                        ProvidersScreen(
+                            onBack = {
+                                viewModel.setPage(Page.MAIN)
+                            },
+                            onEnhancedModeClick = { providerId ->
+                                val intent = Intent(this@SettingsActivity, ProviderLoginActivity::class.java).apply {
+                                    putExtra("provider", providerId)
+                                }
+                                this@SettingsActivity.startActivity(intent)
                             }
-                            this@SettingsActivity.startActivity(intent)
-                        }
-                    )
-                } else {
-
-                    Greeting2(
-                        modifier = Modifier.fillMaxSize(),
-                        onBack = { finish() },
-                        onAddQuickTile = { viewModel.addQuickTile() },
-                        permissionLauncher = permissionLauncher,
-                        onShowProviders = {
-                            showProviders.value = true
-                        }
-                    )
+                        )
+                    }
+                    Page.MAIN -> {
+                        Greeting2(
+                            modifier = Modifier.fillMaxSize(),
+                            onBack = { finish() },
+                            onAddQuickTile = { viewModel.addQuickTile() },
+                            permissionLauncher = permissionLauncher,
+                            currentPage = page,
+                            onPageChange = viewModel::setPage,
+                        )
+                    }
+                    Page.ACCOUNT_SETTINGS -> {
+                        AccountSettingsScreen(
+                            onBack = { viewModel.setPage(Page.MAIN) },
+                            provider = viewModel.selectedProvider.collectAsState().value
+                        )
+                    }
                 }
-
             }
         }
     }
@@ -139,8 +153,11 @@ fun Greeting2(
     onBack: () -> Unit = {},
     onAddQuickTile: () -> Unit = {},
     permissionLauncher: ActivityResultLauncher<String>? = null,
-    onShowProviders: () -> Unit = {}
+    currentPage: Page = Page.MAIN,
+    onPageChange: (Page) -> Unit = {}
 ) {
+    val viewModel: SettingsViewModel = viewModel()
+    val provider = viewModel.selectedProvider
     val context = LocalContext.current
     Scaffold(
         modifier = modifier,
@@ -174,9 +191,21 @@ fun Greeting2(
                 modifier = Modifier.padding(top = 48.dp, bottom = 16.dp),
                 fontSize = 32.sp,
             ) }
+            if (provider.value is DnsProvider.Enhanced) {
+                item {
+                    ClickableCardSettings(
+                        title = "${provider.collectAsState().value.name} Settings",
+                        description = "Change account settings for ${provider.collectAsState().value.name}",
+                        onClick = {
+                            onPageChange(Page.ACCOUNT_SETTINGS)
+                        },
+                        icon = Icons.Filled.AccountCircle
+                    )
+                }
+            }
             item {
                 ClickableCardSettings(
-                    onClick = onShowProviders,
+                    onClick = { onPageChange(Page.PROVIDERS) },
                     title = "Change Provider",
                     description = "Change the provider to use",
                     icon = Icons.Filled.BroadcastOnPersonal
@@ -213,7 +242,7 @@ fun Greeting2(
                         val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                         try {
                             context.startActivity(intent) 
-                        } catch (e: android.content.ActivityNotFoundException) {
+                        } catch (e: ActivityNotFoundException) {
                             Log.e("Settings", "No browser found to open GitHub URL", e)
                         }
                     }
@@ -264,7 +293,7 @@ fun DnsDialog(
     val isAdGuard = remember { mutableStateOf(currentUrl == DnsConstants.ADGUARD_DNS) }
     val customUrlText = remember { mutableStateOf(if (currentUrl == DnsConstants.ADGUARD_DNS) "" else currentUrl) }
 
-    val isCustomValid = customUrlText.value.isNotEmpty() && android.util.Patterns.DOMAIN_NAME.matcher(customUrlText.value).matches()
+    val isCustomValid = customUrlText.value.isNotEmpty() && Patterns.DOMAIN_NAME.matcher(customUrlText.value).matches()
     val isConfirmEnabled = isAdGuard.value || isCustomValid
 
     AlertDialog(

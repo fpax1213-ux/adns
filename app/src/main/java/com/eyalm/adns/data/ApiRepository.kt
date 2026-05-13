@@ -7,9 +7,20 @@ import com.eyalm.adns.data.models.DnsProvider
 import com.eyalm.adns.data.models.DnsProviders
 import com.eyalm.adns.data.network.ApiClient
 import com.eyalm.adns.data.network.NextDnsAnalytics
+import com.eyalm.adns.data.network.NextDnsBlocklistData
 import com.eyalm.adns.data.network.NextDnsCreateProfileRequest
 import com.eyalm.adns.data.network.NextDnsLoginRequest
 import com.eyalm.adns.data.network.NextDnsProfile
+
+data class Blocklist(
+    val id: String,
+    val name: String?,
+    val website: String?,
+    val description: String?,
+    val entries: Int,
+    val updatedOn: String,
+    val isEnabled: Boolean
+)
 
 class ApiRepository(context: Context) {
 
@@ -86,6 +97,25 @@ class ApiRepository(context: Context) {
         }
     }
 
+    suspend fun getNextDnsEmail(): String {
+
+        val cookie = getNextDnsCookie()
+
+        if (!isLoggedIn(DnsProviders.NEXTDNS) || cookie == null) {
+            Log.e("ApiRepository", "No cookie found. User must login first.")
+            throw IllegalStateException("User must login first")
+        }
+
+        return try {
+            val response = ApiClient.nextDnsApi.getProfiles(cookie)
+            response.email
+        } catch (e: Exception) {
+            Log.e("ApiRepository", "Error fetching email", e)
+            throw e
+        }
+
+    }
+
     fun isLoggedIn(provider: DnsProvider): Boolean {
         return provider is DnsProvider.Enhanced && getNextDnsCookie() != null
     }
@@ -127,6 +157,50 @@ class ApiRepository(context: Context) {
         } catch (e: Exception) {
             Log.e("ApiRepository", "Error creating profile", e)
         }
+
+    }
+
+    suspend fun getNextDnsBlocklists(): List<Blocklist> {
+        val cookie = getNextDnsCookie()
+        if (!isLoggedIn(DnsProviders.NEXTDNS) || cookie == null) {
+            Log.e("ApiRepository", "No cookie found. User must login first.")
+            throw IllegalStateException("User must login first")
+        }
+
+        val profileId = getCurrentNextDnsProfileId()
+        if (profileId == null) {
+            Log.e("ApiRepository", "No profile ID found. User must select a profile first.")
+            throw IllegalStateException("User must select a profile first")
+        }
+
+        try {
+            val blocklistsResponse = ApiClient.nextDnsApi.getBlocklists(cookie)
+            Log.d("ApiRepository", "Blocklists: $blocklistsResponse")
+            val privacyResponse = ApiClient.nextDnsApi.getPrivacy(cookie, profileId)
+            val blocklists = mutableListOf<Blocklist>()
+            blocklistsResponse.data.forEach { blocklist: NextDnsBlocklistData ->
+                val isEnabled = privacyResponse.data.blocklists.contains(blocklist)
+                blocklists.add(
+                    Blocklist(
+                        id = blocklist.id,
+                        name = blocklist.name,
+                        website = blocklist.website,
+                        description = blocklist.description,
+                        entries = blocklist.entries,
+                        updatedOn = blocklist.updatedOn,
+                        isEnabled = isEnabled
+                    )
+                )
+                Log.d("ApiRepository", "Blocklist: $blocklist")
+            }
+
+            return blocklists
+        } catch (e: Exception) {
+            Log.e("ApiRepository", "Error fetching blocklists", e)
+            throw e
+        }
+
+
 
     }
 

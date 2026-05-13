@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import com.eyalm.adns.R
 import com.eyalm.adns.data.ApiRepository
+import com.eyalm.adns.data.Blocklist
 import com.eyalm.adns.data.DnsRepository
 import com.eyalm.adns.data.models.DnsProvider
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,11 +16,20 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
+    enum class Page {
+        MAIN,
+        PROVIDERS,
+        ACCOUNT_SETTINGS
+    }
+
     private val repository = DnsRepository(application)
     private val apiRepository = ApiRepository(application)
 
     private val _dnsUrl = MutableStateFlow(repository.getDnsUrl())
     val dnsUrl: StateFlow<String?> = _dnsUrl.asStateFlow()
+
+    private val _page = MutableStateFlow(Page.MAIN)
+    val page = _page.asStateFlow()
 
     fun setDnsUrl(url: String) {
         repository.setCustomUrl(url)
@@ -77,6 +87,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         return apiRepository.isLoggedIn(provider)
     }
 
+    suspend fun getEmail(): String {
+        return apiRepository.getNextDnsEmail()
+    }
 
+    fun setPage(page: Page) {
+        _page.value = page
+    }
+
+    suspend fun getBlocklists(): List<Blocklist> {
+        return apiRepository.getNextDnsBlocklists()
+    }
 
 }
