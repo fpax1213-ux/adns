@@ -11,6 +11,7 @@ import com.eyalm.adns.data.network.NextDnsBlocklistData
 import com.eyalm.adns.data.network.NextDnsCreateProfileRequest
 import com.eyalm.adns.data.network.NextDnsLoginRequest
 import com.eyalm.adns.data.network.NextDnsProfile
+import com.eyalm.adns.data.network.NextDnsUpdateBlocklistsRequest
 
 data class Blocklist(
     val id: String,
@@ -199,8 +200,32 @@ class ApiRepository(context: Context) {
             Log.e("ApiRepository", "Error fetching blocklists", e)
             throw e
         }
+    }
+
+    suspend fun updateNextDnsBlocklists(blocklistId: String) {
+        val cookie = getNextDnsCookie()
+        if (!isLoggedIn(DnsProviders.NEXTDNS) || cookie == null) {
+            Log.e("ApiRepository", "No cookie found. User must login first.")
+            throw IllegalStateException("User must login first")
+        }
+
+        val profileId = getCurrentNextDnsProfileId()
+        if (profileId == null) {
+            Log.e("ApiRepository", "No profile ID found. User must select a profile first.")
+            throw IllegalStateException("User must select a profile first")
+        }
 
 
+        try {
+            ApiClient.nextDnsApi.updateBlocklists(cookie, profileId,
+                NextDnsUpdateBlocklistsRequest(blocklistId))
+            Log.d("ApiRepository", "Blocklist updated successfully: $blocklistId")
+
+
+        } catch (e: Exception) {
+            Log.e("ApiRepository", "Error updating blocklists", e)
+            throw e
+        }
 
     }
 

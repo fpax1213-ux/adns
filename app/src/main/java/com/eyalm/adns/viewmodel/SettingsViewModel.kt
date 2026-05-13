@@ -99,4 +99,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         return apiRepository.getNextDnsBlocklists()
     }
 
+    suspend fun updateBlocklists(blocklistId: String) {
+        apiRepository.updateNextDnsBlocklists(blocklistId)
+    }
+
 }

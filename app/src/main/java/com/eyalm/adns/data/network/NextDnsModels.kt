@@ -79,4 +79,8 @@ data class NextDnsPrivacyData(
     @SerializedName("natives") val natives: List<Any>?
 )
 
+data class NextDnsUpdateBlocklistsRequest(
+    @SerializedName("id") val id: String
+)
+
 

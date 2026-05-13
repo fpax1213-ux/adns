@@ -44,4 +44,11 @@ interface NextDnsApi {
         @Path("profileId") profileId: String
     ): NextDnsPrivacyResponse
 
+    @POST("profiles/{profileId}/privacy/blocklists")
+    suspend fun updateBlocklists(
+        @Header("Cookie") cookie: String,
+        @Path("profileId") profileId: String,
+        @Body body: NextDnsUpdateBlocklistsRequest
+    ): Response<Unit>
+
 }
