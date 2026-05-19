@@ -4,10 +4,13 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,13 +37,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.ui.screens.HomeScreen
+import com.eyalm.adns.ui.screens.SettingsTabRouter
 import com.eyalm.adns.ui.screens.StatsScreen
 import com.eyalm.adns.ui.screens.UpdateDialog
 import com.eyalm.adns.ui.theme.AdnsTheme
 import com.eyalm.adns.viewmodel.MainViewModel
+import com.eyalm.adns.viewmodel.SettingsViewModel
 
 
 class MainActivity : ComponentActivity() {
@@ -76,8 +83,9 @@ class MainActivity : ComponentActivity() {
                 val isEnabled by viewModel.adBlockingState.collectAsState()
                 val runningTime by viewModel.runningTimeFlow.collectAsState()
                 val server by viewModel.dnsUrlFlow.collectAsState()
-
+                val settingsViewModel: SettingsViewModel = viewModel()
                 val showDialog = remember { mutableStateOf(false) }
+                val settingsPage by settingsViewModel.page.collectAsState()
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
@@ -87,12 +95,11 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding),
                         server = server,
                         onEditClick = {
-                            val intent = Intent(context, SettingsActivity::class.java).apply {
-                                putExtra("open_providers", true)
-                            }
-                            context.startActivity(intent)
+                            settingsViewModel.setPage(SettingsViewModel.Page.PROVIDERS)
                         },
-                        checkForUpdate = viewModel::checkForUpdate
+                        checkForUpdate = viewModel::checkForUpdate,
+                        settingsPage = settingsPage
+
                     )
                 }
 
@@ -122,7 +129,8 @@ fun Greeting(
     modifier: Modifier = Modifier,
     server: String = "dns.adguard-dns.com",
     onEditClick: () -> Unit = {},
-    checkForUpdate: ((String?) -> Unit) -> Unit = {}
+    checkForUpdate: ((String?) -> Unit) -> Unit = {},
+    settingsPage: SettingsViewModel.Page = SettingsViewModel.Page.MAIN
 ) {
 
     var selectedItem by remember { mutableIntStateOf(0) }
@@ -130,9 +138,29 @@ fun Greeting(
     val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Insights, Icons.Filled.Settings)
     val unselectedIcons =
         listOf(Icons.Outlined.Home, Icons.Outlined.Insights, Icons.Outlined.Settings)
-
-
+    val context = LocalContext.current
     val latestVersion = remember { mutableStateOf<String?>(null) }
+
+    val settingsViewModel: SettingsViewModel = viewModel()
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            settingsViewModel.refreshNotification()
+            Log.d("Permission", "Permission Granted")
+            val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                putExtra(Settings.EXTRA_CHANNEL_ID, "dns_status_channel")
+            }
+            context.startActivity(intent)
+        } else {
+            Log.d("Permission", "Permission Denied")
+            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            }
+            context.startActivity(intent)
+        }
+    }
 
     if (!BuildConfig.IS_FOSS) {
         LaunchedEffect(Unit) {
@@ -152,22 +180,25 @@ fun Greeting(
 
     Scaffold(
         bottomBar = {
+            if (!(settingsPage != SettingsViewModel.Page.MAIN && selectedItem == 2)) {
+                NavigationBar {
+                    items.forEachIndexed { index, item ->
+                        NavigationBarItem(
+                            icon = {
+                                Icon(
+                                    if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
+                                    contentDescription = item,
+                                )
+                            },
+                            label = { Text(item) },
+                            selected = selectedItem == index,
+                            onClick = { selectedItem = index },
+                        )
+                    }
 
-            NavigationBar {
-                items.forEachIndexed { index, item ->
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                                contentDescription = item,
-                            )
-                        },
-                        label = { Text(item) },
-                        selected = selectedItem == index,
-                        onClick = { selectedItem = index },
-                    )
                 }
             }
+
 
         },
         contentWindowInsets = WindowInsets(0)
@@ -182,8 +213,14 @@ fun Greeting(
                     onToggle = onToggle,
                     modifier = modifier,
                     server = server,
-                    onEditClick = onEditClick,
-                    innerPadding = innerPadding
+                    onEditClick = {
+                        selectedItem = 2
+                        onEditClick()
+                    },
+                    innerPadding = innerPadding,
+                    onSettingsClick = {
+                        selectedItem = 2
+                    }
                 )
 
             }
@@ -191,7 +228,16 @@ fun Greeting(
                 innerPadding
             )
             2 -> {
-                Greeting2() // TODO: Move settings screen and logic
+                SettingsTabRouter(
+                    modifier = Modifier.padding(innerPadding),
+                    onNavigateToProvidersActivity = { providerId ->
+                        val intent = Intent(context, ProviderLoginActivity::class.java).apply {
+                            putExtra("provider", providerId)
+                        }
+                        context.startActivity(intent)
+                    },
+                    permissionLauncher = permissionLauncher
+                )
             }
         }
 

@@ -31,7 +31,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
-import com.eyalm.adns.SettingsActivity
 import com.eyalm.adns.ui.components.DnsSwitch
 import com.eyalm.adns.ui.theme.AdnsTheme
 
@@ -44,6 +43,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     server: String = "dns.adguard-dns.com",
     onEditClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     innerPadding: PaddingValues
 ) {
     val localContext = LocalContext.current
@@ -87,11 +87,7 @@ fun HomeScreen(
                         IconButton(
                             modifier = Modifier
                                 .align(Alignment.Top),
-                            onClick = {
-                                localContext.startActivity(Intent(localContext,
-                                    SettingsActivity::class.java))
-
-                            },
+                            onClick = onSettingsClick,
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Settings,
