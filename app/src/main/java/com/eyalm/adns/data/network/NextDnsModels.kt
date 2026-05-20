@@ -84,3 +84,28 @@ data class NextDnsUpdateBlocklistsRequest(
 )
 
 
+// https://api.nextdns.io/profiles/***/analytics/status;series?from=-30m&alignment=start&timezone=Asia%2FJerusalem
+
+data class NextDnsStatsGraphResponse(
+    @SerializedName("data") val data: List<NextDnsStatsGraphData>,
+    @SerializedName("meta") val meta: Any // TODO if needed
+)
+
+data class NextDnsStatsGraphData(
+    @SerializedName("queries") val queries: List<Int>,
+    @SerializedName("status") val status: String
+)
+
+
+// https://api.nextdns.io/profiles/*****/analytics/domains?status=default%2Callowed&from=-30m&limit=6
+// https://api.nextdns.io/profiles/*****/analytics/domains?status=blocked&from=-30m&limit=6
+
+data class NextDnsDomainsResponse(
+    @SerializedName("data") val data: List<NextDnsDomainData>,
+    @SerializedName("meta") val meta: Any
+)
+
+data class NextDnsDomainData(
+    @SerializedName("domain") val domain: String,
+    @SerializedName("queries") val queries: Int
+)
