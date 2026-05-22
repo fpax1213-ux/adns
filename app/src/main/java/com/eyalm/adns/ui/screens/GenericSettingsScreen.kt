@@ -82,7 +82,25 @@ fun GenericCategoryScreen(
                 CircularProgressIndicator(modifier = Modifier.size(50.dp))
             }
         } else {
-            val groupedToggles = remember(toggles) { toggles.groupBy { it.apiPath.first() } }
+            val toggleStatesMap = toggleStates
+            val (multiItemGroups, singleItemGroups) = remember(toggles) {
+                toggles.groupBy { it.apiPath.first() }
+                    .toList()
+                    .partition { it.second.size > 1 }
+            }
+
+            @Composable
+            fun ToggleItem(toggle: ToggleSetting) {
+                SwitchSettingCard(
+                    title = toggle.title(),
+                    description = toggle.description(),
+                    checked = toggleStatesMap[toggle.stateKey] == true,
+                    onCheckedChange = { newValue ->
+                        viewModel.updateToggle(apiPage, toggle, newValue)
+                    }
+                )
+            }
+
             LazyColumn(
                 modifier = Modifier
                     .padding(innerPadding)
@@ -99,30 +117,30 @@ fun GenericCategoryScreen(
                     )
                 }
 
-                if (groupedToggles.size != toggles.size) {
-                    groupedToggles.forEach { (string, settings) ->
-                        item { Text(Locales.getString(apiPage, string, "name")) }
-                        items(settings) { toggle ->
-                            SwitchSettingCard(
-                                title = toggle.title(),
-                                description = toggle.description(),
-                                checked = toggleStates[toggle.stateKey] == true,
-                                onCheckedChange = { newValue ->
-                                    viewModel.updateToggle(apiPage, toggle, newValue)
-                                }
+                if (multiItemGroups.isNotEmpty()) {
+                    multiItemGroups.forEach { (groupKey, settings) ->
+                        item(key = groupKey) {
+                            Text(
+                                text = Locales.getString(apiPage, groupKey, "name"),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                             )
+                        }
+                        items(settings, key = { it.stateKey }) { toggle -> ToggleItem(toggle) }
+                    }
+
+                    if (singleItemGroups.isNotEmpty()) {
+                        item { Spacer(modifier = Modifier.height(8.dp)) }
+                        items(
+                            singleItemGroups.flatMap { it.second },
+                            key = { it.stateKey }) { toggle ->
+                            ToggleItem(toggle)
                         }
                     }
                 } else {
-                    items(toggles) { toggle ->
-                        SwitchSettingCard(
-                            title = toggle.title(),
-                            description = toggle.description(),
-                            checked = toggleStates[toggle.stateKey] == true,
-                            onCheckedChange = { newValue ->
-                                viewModel.updateToggle(apiPage, toggle, newValue)
-                            }
-                        )
+                    items(toggles, key = { it.stateKey }) { toggle ->
+                        ToggleItem(toggle)
                     }
                 }
 
