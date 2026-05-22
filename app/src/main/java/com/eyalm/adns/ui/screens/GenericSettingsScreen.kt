@@ -26,12 +26,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.data.ListSetting
+import com.eyalm.adns.data.Locales
 import com.eyalm.adns.data.ToggleSetting
 import com.eyalm.adns.ui.components.ClickableCardSettings
 import com.eyalm.adns.ui.components.SwitchSettingCard
@@ -80,6 +82,7 @@ fun GenericCategoryScreen(
                 CircularProgressIndicator(modifier = Modifier.size(50.dp))
             }
         } else {
+            val groupedToggles = remember(toggles) { toggles.groupBy { it.apiPath.first() } }
             LazyColumn(
                 modifier = Modifier
                     .padding(innerPadding)
@@ -96,16 +99,34 @@ fun GenericCategoryScreen(
                     )
                 }
 
-                items(toggles) { toggle ->
-                    SwitchSettingCard(
-                        title = toggle.title(),
-                        description = toggle.description(),
-                        checked = toggleStates[toggle.stateKey] == true,
-                        onCheckedChange = { newValue ->
-                            viewModel.updateToggle(apiPage, toggle, newValue)
+                if (groupedToggles.size != toggles.size) {
+                    groupedToggles.forEach { (string, settings) ->
+                        item { Text(Locales.getString(apiPage, string, "name")) }
+                        items(settings) { toggle ->
+                            SwitchSettingCard(
+                                title = toggle.title(),
+                                description = toggle.description(),
+                                checked = toggleStates[toggle.stateKey] == true,
+                                onCheckedChange = { newValue ->
+                                    viewModel.updateToggle(apiPage, toggle, newValue)
+                                }
+                            )
                         }
-                    )
+                    }
+                } else {
+                    items(toggles) { toggle ->
+                        SwitchSettingCard(
+                            title = toggle.title(),
+                            description = toggle.description(),
+                            checked = toggleStates[toggle.stateKey] == true,
+                            onCheckedChange = { newValue ->
+                                viewModel.updateToggle(apiPage, toggle, newValue)
+                            }
+                        )
+                    }
                 }
+
+
 
                 if (lists.isNotEmpty()) {
                     Log.d("GenericCategoryScreen", "Rendering lists for $apiPage")
