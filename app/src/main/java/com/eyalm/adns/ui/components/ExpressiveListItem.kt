@@ -1,8 +1,5 @@
 package com.eyalm.adns.ui.components
 
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -11,7 +8,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -21,63 +19,87 @@ import androidx.compose.ui.unit.dp
 fun ExpressiveListItem(
     onClick: () -> Unit,
     isSelected: Boolean = false,
-    icon: ImageVector?,
+    icon: ImageVector? = null,
     secondIcon: ImageVector? = null,
+    interactiveItem: (@Composable (isSelected: Boolean, onClick: () -> Unit) -> Unit)? = null,
     title: String,
     description: String?,
     isFirst: Boolean = false,
     isLast: Boolean = false,
+) {
+    val containerColor = MaterialTheme.colorScheme.surfaceContainer
+    val itemColors = ListItemDefaults.colors(containerColor = containerColor)
 
-    ) {
-    SegmentedListItem(
-        selected = isSelected,
-        onClick = onClick,
-        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        shapes = ListItemDefaults.shapes(
-            shape = RoundedCornerShape(
-                topStart = if (isFirst) 12.dp else 0.dp,
-                topEnd = if (isFirst) 12.dp else 0.dp,
-                bottomStart = if (isLast) 12.dp else 0.dp,
-                bottomEnd = if (isLast) 12.dp else 0.dp
-            )
-        ),
-        leadingContent = {
-            Row {
-                if (icon != null) {
-                    ExpressiveIcon(icon)
-                }
-                Spacer(modifier = Modifier.width(4.dp))
+    val itemShape = remember(isFirst, isLast) {
+        RoundedCornerShape(
+            topStart = if (isFirst) 12.dp else 0.dp,
+            topEnd = if (isFirst) 12.dp else 0.dp,
+            bottomStart = if (isLast) 12.dp else 0.dp,
+            bottomEnd = if (isLast) 12.dp else 0.dp
+        )
+    }
+
+    val itemShapes = ListItemDefaults.shapes(shape = itemShape)
+
+    val leading = remember(icon) {
+        icon?.let {
+            @Composable {
+                ExpressiveIcon(it)
             }
+        }
+    }
 
-        },
-        trailingContent = {
+    val supportingTextStyle = MaterialTheme.typography.bodyMedium
+    val supportingTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val supporting = remember(description, supportingTextStyle, supportingTextColor) {
+        description?.let {
+            @Composable {
+                Text(
+                    text = it,
+                    style = supportingTextStyle,
+                    color = supportingTextColor
+                )
+            }
+        }
+    }
+
+    val titleTextStyle = MaterialTheme.typography.titleMedium
+    val titleTextColor = MaterialTheme.colorScheme.onSurface
+    val mainContent = remember(title, titleTextStyle, titleTextColor) {
+        @Composable {
+            Text(
+                text = title,
+                style = titleTextStyle.copy(fontWeight = FontWeight.Bold),
+                color = titleTextColor
+            )
+        }
+    }
+
+    val trailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val trailing = remember(secondIcon, interactiveItem, isSelected, onClick, trailingIconColor) {
+        @Composable {
             if (secondIcon != null) {
                 Icon(
                     imageVector = secondIcon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    tint = trailingIconColor.copy(alpha = 0.7f)
                 )
             }
-
-        },
-        supportingContent = {
-            if (description != null) {
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            if (interactiveItem != null) {
+                interactiveItem(isSelected, onClick)
             }
-
-        },
-        content = {
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
         }
+    }
+
+    SegmentedListItem(
+        selected = isSelected,
+        onClick = onClick,
+        colors = itemColors,
+        verticalAlignment = Alignment.CenterVertically,
+        shapes = itemShapes,
+        leadingContent = leading,
+        trailingContent = trailing,
+        supportingContent = supporting,
+        content = mainContent
     )
 }

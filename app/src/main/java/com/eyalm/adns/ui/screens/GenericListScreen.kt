@@ -1,6 +1,5 @@
 package com.eyalm.adns.ui.screens.settings
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,9 +8,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -37,8 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.eyalm.adns.ui.components.ListIconView
-import com.eyalm.adns.ui.components.SelectableCard
+import com.eyalm.adns.ui.components.ExpressiveListItem
+import com.eyalm.adns.ui.theme.pageTitle
 import com.eyalm.adns.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -94,20 +95,29 @@ fun GenericListScreen(onBack: () -> Unit) {
                 }
             }
 
+            val checkboxItem = remember {
+                @Composable { selected: Boolean, onClick: () -> Unit ->
+                    Checkbox(
+                        checked = selected,
+                        onCheckedChange = { onClick() }
+                    )
+                }
+            }
+
             LazyColumn(
                 modifier = Modifier
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = 16.dp)
             ) {
                 item {
                     Text(
                         text = listSetting.title(),
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.pageTitle,
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(top = 48.dp, bottom = 8.dp),
                         fontSize = 32.sp
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 item {
@@ -116,21 +126,34 @@ fun GenericListScreen(onBack: () -> Unit) {
                         onValueChange = { searchQuery = it },
                         placeholder = { Text("Search...") },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                items(filteredItems, key = { it.id }) { item ->
-                    SelectableCard(
+                itemsIndexed(filteredItems, key = { _, item -> item.id }) { index, item ->
+                    val onItemClick = remember(item.id) {
+                        { viewModel.toggleListItem(item.id) }
+                    }
+                    ExpressiveListItem(
                         title = item.name,
-                        description = item.description ?: "",
-                        selected = activeIds.contains(item.id),
-                        onClick = { viewModel.toggleListItem(item.id) },
+                        description = item.description,
+                        isSelected = activeIds.contains(item.id),
+                        onClick = onItemClick,
+                        /* TODO
                         leadingIcon = {
                             ListIconView(icon = item.icon)
                         }
+                         */
+                        interactiveItem = checkboxItem,
+                        isLast = index == filteredItems.lastIndex,
+                        isFirst = index == 0
                     )
+                    if (index != filteredItems.lastIndex) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
                 }
 
                 item { Spacer(modifier = Modifier.height(16.dp)) }
