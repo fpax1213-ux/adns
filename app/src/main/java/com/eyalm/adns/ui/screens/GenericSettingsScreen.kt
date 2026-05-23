@@ -127,6 +127,22 @@ fun GenericCategoryScreen(
                     )
                 }
 
+                if (lists.isNotEmpty()) {
+                    Log.d("GenericCategoryScreen", "Rendering lists for $apiPage")
+                    Log.d("GenericCategoryScreen", "Lists: $lists")
+
+                    items(lists) { listSetting ->
+                        ClickableCardSettings(
+                            title = listSetting.title(),
+                            description = listSetting.description(),
+                            onClick = { viewModel.openListScreen(listSetting) },
+                            icon = Icons.Filled.List
+                        )
+                    }
+                    item { Spacer(modifier = Modifier.height(8.dp)) }
+
+                }
+
                 if (multiItemGroups.isNotEmpty()) {
                     multiItemGroups.forEach { (groupKey, settings) ->
                         item(key = groupKey) {
@@ -156,20 +172,7 @@ fun GenericCategoryScreen(
 
 
 
-                if (lists.isNotEmpty()) {
-                    Log.d("GenericCategoryScreen", "Rendering lists for $apiPage")
-                    Log.d("GenericCategoryScreen", "Lists: $lists")
-                    item { Spacer(modifier = Modifier.height(8.dp)) }
 
-                    items(lists) { listSetting ->
-                        ClickableCardSettings(
-                            title = listSetting.title(),
-                            description = "Manage blocked items",
-                            onClick = { viewModel.openListScreen(listSetting) },
-                            icon = Icons.Filled.List
-                        )
-                    }
-                }
 
                 item { Spacer(modifier = Modifier.height(32.dp)) }
             }
