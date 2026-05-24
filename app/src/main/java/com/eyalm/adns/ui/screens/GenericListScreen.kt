@@ -1,6 +1,7 @@
 package com.eyalm.adns.ui.screens.settings
 
 import android.util.Patterns
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ContainedLoadingIndicator
@@ -27,10 +29,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -147,44 +153,97 @@ fun GenericListScreen(onBack: () -> Unit) {
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(top = 24.dp, bottom = 8.dp),
                     )
-                    Text(text = listSetting.description(), fontSize = 16.sp)
+                    Text(text = listSetting.description() , fontSize = 16.sp)
+                    Text(text = "Hint: To remove items from the list, swipe to the left.", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(16.dp))
                 }
+                if (availableItems.count() > 10 ) {
+                    item {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp)
 
-                item {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search...") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp)
-
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
 
                 itemsIndexed(filteredItems, key = { _, item -> item.id }) { index, item ->
+
+                    val dismissState = rememberSwipeToDismissBoxState()
+
+                    LaunchedEffect(dismissState.currentValue) {
+                        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+                            viewModel.deleteCustomDomain(item.id)
+                        }
+                    }
+
                     val onItemClick = remember(item.id) {
                         { viewModel.toggleListItem(item.id) }
                     }
-                    ExpressiveListItem(
-                        title = item.name,
-                        description = item.description,
-                        isSelected = activeIds.contains(item.id),
-                        onClick = onItemClick,
-                        /* TODO
-                        leadingIcon = {
-                            ListIconView(icon = item.icon)
+                    if (listSetting.allowsCustomInput) {
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            enableDismissFromStartToEnd = false,
+                            enableDismissFromEndToStart = true,
+                            backgroundContent = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Transparent)
+                                        .padding(horizontal = 20.dp),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Delete,
+                                        contentDescription = "Delete",
+                                        tint = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                            }
+                        ) {
+
+                            ExpressiveListItem(
+                                title = item.name,
+                                description = item.description,
+                                isSelected = activeIds.contains(item.id),
+                                onClick = onItemClick,
+                                /* TODO
+                                leadingIcon = {
+                                    ListIconView(icon = item.icon)
+                                }
+                                 */
+                                interactiveItem = checkboxItem,
+                                isLast = index == filteredItems.lastIndex,
+                                isFirst = index == 0,
+                            )
+
                         }
-                         */
-                        interactiveItem = checkboxItem,
-                        isLast = index == filteredItems.lastIndex,
-                        isFirst = index == 0,
-                    )
+                    } else {
+                        ExpressiveListItem(
+                            title = item.name,
+                            description = item.description,
+                            isSelected = activeIds.contains(item.id),
+                            onClick = onItemClick,
+                            /* TODO
+                            leadingIcon = {
+                                ListIconView(icon = item.icon)
+                            }
+                             */
+                            interactiveItem = checkboxItem,
+                            isLast = index == filteredItems.lastIndex,
+                            isFirst = index == 0,
+                        )
+
+                    }
                     if (index != filteredItems.lastIndex) {
                         Spacer(modifier = Modifier.height(4.dp))
                     }
+
                 }
 
                 item { Spacer(modifier = Modifier.height(16.dp)) }

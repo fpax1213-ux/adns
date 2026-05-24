@@ -259,7 +259,7 @@ object DenyList {
             source = ListSource.SERVER,
             localePath = emptyList(),
             customTitle = "Denylist",
-            customDescription = "Add specific domains to the Denylist.",
+            customDescription = Locales.getString("xlist", "denylist", "info"),
             allowsCustomInput = true
         )
     )
@@ -274,7 +274,7 @@ object Allowlist {
             localeCategory = "pages",
             localeKey = "allowlist",
             customTitle = "Allowlist",
-            customDescription = "Add specific domains to the Allowlist.",
+            customDescription = Locales.getString("xlist", "allowlist", "info"),
             source = ListSource.SERVER,
             localePath = emptyList(),
             allowsCustomInput = true
