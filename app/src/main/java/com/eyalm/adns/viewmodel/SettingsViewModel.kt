@@ -459,7 +459,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
         val cleanDomain = domain.trim().lowercase()
 
-        val newItem = ListItem(id = cleanDomain, name = cleanDomain)
+        val newItem = ListItem(id = cleanDomain, name = "*.$cleanDomain")
         _availableItems.value = listOf(newItem) + _availableItems.value
         _activeListIds.value += cleanDomain
 

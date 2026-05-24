@@ -1,5 +1,6 @@
 package com.eyalm.adns.ui.screens.settings
 
+import android.util.Patterns
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,18 +13,22 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -56,9 +61,24 @@ fun GenericListScreen(onBack: () -> Unit) {
     val snackbarHostState = remember { SnackbarHostState() }
     val errorMessage by viewModel.errorMessage.collectAsState(initial = null)
 
+    val openAddDialog = remember { mutableStateOf(false) }
+    val openRemoveDialog = remember { mutableStateOf(false) }
+
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarHostState.showSnackbar(it)
+        }
+    }
+
+    when {
+        openAddDialog.value -> {
+            AddDialog(
+                onDismissRequest = { openAddDialog.value = false },
+                onConfirmation = { domain ->
+                    viewModel.addCustomDomain(domain)
+                    openAddDialog.value = false
+                }
+            )
         }
     }
 
@@ -77,6 +97,17 @@ fun GenericListScreen(onBack: () -> Unit) {
                 )
             )
         },
+        floatingActionButton = {
+            if (listSetting.allowsCustomInput) {
+                ExtendedFloatingActionButton(
+                    icon = { Icon(Icons.Filled.Add, "add") },
+                    text = { Text(text = "Add Item") },
+                    onClick = {
+                        openAddDialog.value = true
+                    }
+                )
+            }
+        },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         if (isLoading && availableItems.isEmpty()) {
@@ -84,7 +115,7 @@ fun GenericListScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                LoadingIndicator(modifier = Modifier.size(100.dp))
+                ContainedLoadingIndicator(modifier = Modifier.size(64.dp))
             }
         } else {
             val filteredItems = remember(searchQuery, availableItems) {
@@ -149,7 +180,7 @@ fun GenericListScreen(onBack: () -> Unit) {
                          */
                         interactiveItem = checkboxItem,
                         isLast = index == filteredItems.lastIndex,
-                        isFirst = index == 0
+                        isFirst = index == 0,
                     )
                     if (index != filteredItems.lastIndex) {
                         Spacer(modifier = Modifier.height(4.dp))
@@ -160,4 +191,63 @@ fun GenericListScreen(onBack: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+fun AddDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: (domain: String) -> Unit,
+) {
+    var domain by remember { mutableStateOf("") }
+
+    AlertDialog(
+        icon = {
+            Icon(imageVector=Icons.Default.Add, contentDescription = "Add")
+        },
+        title = {
+            Text(text = "Add Item")
+        },
+        text = {
+            Text(text = "")
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                value = domain,
+                placeholder = { Text("Enter a domain...") },
+                singleLine = true,
+                onValueChange = {
+                    domain = it
+                },
+                isError = !Patterns.DOMAIN_NAME.matcher(domain).matches(),
+                supportingText = {
+                    if (!Patterns.DOMAIN_NAME.matcher(domain).matches()) {
+                        Text("Invalid Domain")
+                    }
+                },
+                shape = RoundedCornerShape(12.dp)
+            )
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (Patterns.DOMAIN_NAME.matcher(domain).matches()) {
+                        onConfirmation(domain)
+                    }
+                }
+            ) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                }
+            ) {
+                Text("Dismiss")
+            }
+        }
+    )
 }

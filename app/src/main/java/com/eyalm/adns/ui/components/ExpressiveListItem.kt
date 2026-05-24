@@ -91,10 +91,11 @@ fun ExpressiveListItem(
         }
     }
 
+
     SegmentedListItem(
         selected = isSelected,
-        onClick = onClick,
         colors = itemColors,
+        onClick = onClick,
         verticalAlignment = Alignment.CenterVertically,
         shapes = itemShapes,
         leadingContent = leading,

@@ -54,6 +54,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.eyalm.adns.BuildConfig
 import com.eyalm.adns.R
+import com.eyalm.adns.data.Allowlist
 import com.eyalm.adns.data.DenyList
 import com.eyalm.adns.data.models.DnsProviders
 import com.eyalm.adns.ui.components.ExpressiveListItem
@@ -83,6 +84,7 @@ fun MainSettingsScreen(
     val onSecurityClick = remember(onPageChange) { { onPageChange(Page.SECURITY) } }
     val onPrivacyClick = remember(onPageChange) { { onPageChange(Page.PRIVACY) } }
     val onDenylistClick = remember(onPageChange) {  { viewModel.openListScreen(DenyList.lists.first()) } }
+    val onAllowlistClick = remember(onPageChange) {  { viewModel.openListScreen(Allowlist.lists.first()) } }
     val onParentalControlClick = remember(onPageChange) { { onPageChange(Page.PARENTAL_CONTROL) } }
     val onSettingsPageClick = remember(onPageChange) { { onPageChange(Page.SETTINGS_PAGE) } }
     val onNotificationsClick = remember(permissionLauncher) {
@@ -213,7 +215,7 @@ fun MainSettingsScreen(
                         ExpressiveListItem(
                             title = "Allowlist",
                             description = "Add specific domains to the Allowlist.",
-                            onClick = onDenylistClick,
+                            onClick = onAllowlistClick,
                             icon = Icons.Filled.Check,
                             secondIcon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         )

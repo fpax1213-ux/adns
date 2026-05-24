@@ -271,6 +271,7 @@ object Allowlist {
             apiFeat = "",
             localeCategory = "pages",
             localeKey = "allowlist",
+            customTitle = "Allowlist",
             source = ListSource.SERVER,
             localePath = emptyList(),
             allowsCustomInput = true
