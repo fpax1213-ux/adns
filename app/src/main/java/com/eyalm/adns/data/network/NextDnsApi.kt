@@ -127,42 +127,4 @@ interface NextDnsApi {
         @Path("hexId") hexId: String
     ): Response<Unit>
 
-
-
-
-
-    // OLD ENDPOINTS
-    // TODO get rid of them
-    @GET("privacy/blocklists")
-    suspend fun getBlocklists(
-        @Header("Cookie") cookie: String
-    ): NextDnsBlocklistResponse
-
-    @GET("profiles/{profileId}/privacy")
-    suspend fun getPrivacy(
-        @Header("Cookie") cookie: String,
-        @Path("profileId") profileId: String
-    ): NextDnsPrivacyResponse
-
-    @POST("profiles/{profileId}/privacy/blocklists")
-    suspend fun addBlocklist(
-        @Header("Cookie") cookie: String,
-        @Path("profileId") profileId: String,
-        @Body body: NextDnsUpdateBlocklistsRequest
-    ): Response<Unit>
-
-    @DELETE("profiles/{profileId}/privacy/blocklists/{blocklistId}")
-    suspend fun removeBlocklist(
-        @Header("Cookie") cookie: String,
-        @Path("profileId") profileId: String,
-        @Path("blocklistId") blocklistId: String
-    ): Response<Unit>
-
-
-
-
-
-
-
-
 }

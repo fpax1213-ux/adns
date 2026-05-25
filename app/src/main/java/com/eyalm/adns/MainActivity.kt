@@ -116,7 +116,6 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             // migrate from 1.0.3
-            // TODO test
             val sharedPreferences = getSharedPreferences("adns_settings", Context.MODE_PRIVATE)
             val oldHostname = sharedPreferences.getString("custom_url", null)
             oldHostname?.let {

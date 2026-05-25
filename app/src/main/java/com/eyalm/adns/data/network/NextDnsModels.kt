@@ -96,7 +96,7 @@ data class NextDnsUpdateBlocklistsRequest(
 
 data class NextDnsStatsGraphResponse(
     @SerializedName("data") val data: List<NextDnsStatsGraphData>,
-    @SerializedName("meta") val meta: Any // TODO if needed
+    @SerializedName("meta") val meta: Any
 )
 
 data class NextDnsStatsGraphData(

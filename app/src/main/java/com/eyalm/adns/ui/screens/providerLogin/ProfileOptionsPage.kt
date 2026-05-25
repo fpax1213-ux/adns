@@ -120,7 +120,7 @@ fun CreateProfileDialog(
             TextButton(
                 onClick = {
                     if (name.trim().isNotEmpty()) {
-                        onConfirmation(name) // TODO: Error handling: validate name, make sure it doesn't already exist
+                        onConfirmation(name)
                     }
                 }
             ) {

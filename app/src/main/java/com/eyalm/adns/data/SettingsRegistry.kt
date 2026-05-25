@@ -196,7 +196,7 @@ object SettingsPageSettings {
         ),
 
         // toggles under "logs"
-        // TODO refer to webUI
+        // TODO add text input
         ToggleSetting(
             apiPath = listOf("logs", "enabled"),
             localeKey = "logs", category = "settings",
