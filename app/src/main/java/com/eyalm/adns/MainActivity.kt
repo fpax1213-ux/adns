@@ -1,6 +1,7 @@
 package com.eyalm.adns
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -51,11 +52,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.edit
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.eyalm.adns.data.DnsRepository
 import com.eyalm.adns.data.Locales
 import com.eyalm.adns.data.models.DnsProvider
+import com.eyalm.adns.data.models.DnsProviders
 import com.eyalm.adns.ui.screens.HomeScreen
 import com.eyalm.adns.ui.screens.SettingsTabRouter
 import com.eyalm.adns.ui.screens.StatsScreen
@@ -117,6 +121,23 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         handleShortcutIntent(intent)
         Locales.init(context)
+
+        lifecycleScope.launch {
+            // migrate from 1.0.3
+            // TODO test
+            val sharedPreferences = getSharedPreferences("adns_settings", Context.MODE_PRIVATE)
+            val oldHostname = sharedPreferences.getString("custom_url", null)
+            oldHostname?.let {
+                val provider = DnsProviders.getProviderByHostname(oldHostname)
+                val repository = DnsRepository(context)
+                sharedPreferences.edit { remove("custom_url") }
+                if (provider is DnsProvider.Custom) {
+                    repository.setProvider("custom", oldHostname)
+                } else {
+                    repository.setProvider(provider.id)
+                }
+            }
+        }
 
         setContent {
             AdnsTheme {
@@ -209,6 +230,8 @@ fun Greeting(
             context.startActivity(intent)
         }
     }
+
+
 
     if (!BuildConfig.IS_FOSS) {
         LaunchedEffect(Unit) {

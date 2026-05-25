@@ -309,7 +309,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                         ListSource.LOCALE -> loadLocaleList(listSetting)
                     }
                     _availableItems.value = items
-                    if (_activeListIds.value.isEmpty()) {
+                    if (items.isEmpty()) {
                         _errorMessage.emit("Failed to load list data.")
                     }
                 }
