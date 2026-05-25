@@ -47,6 +47,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _errorMessage = MutableStateFlow("")
     val errorMessage = _errorMessage.asStateFlow()
 
+    private val _currentFilter = MutableStateFlow("")
+    val currentFilter = _currentFilter.asStateFlow()
+
     private val statsCache = mutableMapOf<String, Pair<NextDnsStatsGraphResponse, NextDnsDomainsResponse>>()
 
     init {
@@ -64,6 +67,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         }
 
                         _stats.value = statsCache["-30d"]
+                        _currentFilter.value = "-30d"
                         Log.d("stats", "got stats")
                     } catch (e: Exception) {
                         Log.e("MainViewModel", "Error fetching stats on URL change", e)
@@ -125,6 +129,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getPeriod(period: String) {
         _stats.value = statsCache[period]
+        _currentFilter.value = period
     }
 
 

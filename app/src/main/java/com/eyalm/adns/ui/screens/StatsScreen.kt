@@ -32,12 +32,9 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,24 +67,22 @@ fun StatsScreen(
     modifier: Modifier = Modifier,
     viewModel: MainViewModel = viewModel()
 ) {
-    var selectedFilterText by remember { mutableStateOf("30 days") }
-    val filterOptions = listOf("24 hours", "7 days", "30 days")
+    val filterOptions = remember { listOf("24 hours", "7 days", "30 days") }
 
-    val filterMap = mapOf(
-        "24 hours" to "-24h",
-        "7 days" to "-7d",
-        "30 days" to "-30d"
-    )
-
+    val filterMap = remember {
+        mapOf(
+            "24 hours" to "-24h",
+            "7 days" to "-7d",
+            "30 days" to "-30d"
+        )
+    }
+    val reverseFilterMap = remember(filterMap) {
+        filterMap.entries.associate { it.value to it.key }
+    }
 
     val stats by viewModel.stats.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
-
-    LaunchedEffect(Unit) {
-        if (stats == null) {
-            viewModel
-        }
-    }
+    val currentFilter by viewModel.currentFilter.collectAsState()
 
     Column(
         modifier = modifier
@@ -116,7 +111,8 @@ fun StatsScreen(
 
             val size = minOf(allowedSeries.size, blockedSeries.size)
             val totalPoints = (0 until size).map { i -> (allowedSeries[i] + blockedSeries[i]).toFloat() }
-            val blockedPoints = blockedSeries.map { it.toFloat() }
+            val blockedPoints = (0 until size).map { i -> blockedSeries[i].toFloat() }
+            val maxQueries = (totalPoints.maxOrNull() ?: 1f).coerceAtLeast(1f)
 
             val totalQueriesSum = allowedSeries.sum() + blockedSeries.sum()
             val blockedQueriesSum = blockedSeries.sum()
@@ -137,10 +133,10 @@ fun StatsScreen(
                         blockedCount = "${formatInteger(blockedQueriesSum)} ($blockedPercent%) blocked",
                         totalQueriesPoints = totalPoints,
                         blockedQueriesPoints = blockedPoints,
+                        maxQueries = maxQueries,
                         filterOptions = filterOptions,
-                        selectedFilter = selectedFilterText,
+                        selectedFilter = reverseFilterMap[currentFilter] ?: "30 days",
                         onFilterSelected = { filter ->
-                            selectedFilterText = filter
                             viewModel.getPeriod(filterMap[filter] ?: "-30d")
                         },
                     )
@@ -164,6 +160,7 @@ fun TotalQueriesCard(
     blockedCount: String,
     totalQueriesPoints: List<Float>,
     blockedQueriesPoints: List<Float>,
+    maxQueries: Float,
     filterOptions: List<String>,
     selectedFilter: String,
     onFilterSelected: (String) -> Unit,
@@ -224,13 +221,15 @@ fun TotalQueriesCard(
                         points = totalQueriesPoints,
                         lineColor = MaterialTheme.colorScheme.primary,
                         strokeWidth = 5.dp,
+                        maxY = maxQueries,
                         modifier = Modifier.fillMaxSize()
                     )
                     WavyLineChart(
                         points = blockedQueriesPoints,
                         lineColor = MaterialTheme.colorScheme.error,
                         strokeWidth = 5.dp,
-                        modifier = Modifier.fillMaxSize().padding(top = 40.dp)
+                        maxY = maxQueries,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
@@ -378,14 +377,15 @@ fun WavyLineChart(
     points: List<Float>,
     lineColor: Color,
     modifier: Modifier = Modifier,
-    strokeWidth: Dp = 3.dp
+    strokeWidth: Dp = 3.dp,
+    maxY: Float? = null
 ) {
     Canvas(modifier = modifier) {
-        if (points.isEmpty()) return@Canvas
+        if (points.size < 2) return@Canvas
         val width = size.width
         val height = size.height
-        val maxVal = points.maxOrNull() ?: 1f
-        val minVal = points.minOrNull() ?: 0f
+        val maxVal = maxY ?: points.maxOrNull() ?: 1f
+        val minVal = if (maxY != null) 0f else (points.minOrNull() ?: 0f)
         val range = (maxVal - minVal).coerceAtLeast(1f)
 
         val path = Path()
