@@ -120,7 +120,10 @@ fun ExpressiveListItem(
                 )
             }
             if (interactiveItem != null) {
-                interactiveItem(isSelected, onClick)
+                Row() {
+                    interactiveItem(isSelected, onClick)
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
             }
 
         }
